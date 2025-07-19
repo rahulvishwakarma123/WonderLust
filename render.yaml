@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: wonderlust-server
+    env: node
+    buildCommand: npm install
+    startCommand: node app.js
+    envVars:
+      - key: ATLASDB_URL
+        sync: false
+      - key: CLOUD_NAME
+        sync: false
+      - key: CLOUD_API_KEY
+        sync: false
+      - key: CLOUD_API_SECRET
+        sync: false
+      - key: SECRET
+        sync: false

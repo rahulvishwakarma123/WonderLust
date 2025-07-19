@@ -59,7 +59,9 @@ module.exports.renderEditFrom = async (req, res) => {
         req.flash('error', 'Listing you have requested does not exist!');
         return res.redirect('/listing');
     }
-    res.render('listing/edit.ejs', { list })
+    let originalImageUrl = list.image.url;
+    originalImageUrl = originalImageUrl.replace('/upload','/upload/h_250,w_400')
+    res.render('listing/edit.ejs', { list, originalImageUrl })
 }
 
 // Update listing in database

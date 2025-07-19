@@ -3,7 +3,7 @@
     font-family: "Plus Jakarta Sans", sans-serif !important;
 }
 .container{
-    
+  height: 80vh;  
 }
 .navbar{
     height: 5rem;
