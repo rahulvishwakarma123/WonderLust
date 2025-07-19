@@ -1,6 +1,6 @@
 {
   "engines": {
-    "node" : "20.13.1"
+    "node": "20.13.1"
   },
   "name": "part-a",
   "version": "1.0.0",
@@ -23,6 +23,7 @@
     "ejs-mate": "^4.0.0",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
+    "helmet": "^8.1.0",
     "joi": "^17.13.3",
     "method-override": "^3.0.0",
     "mongodb": "^6.17.0",

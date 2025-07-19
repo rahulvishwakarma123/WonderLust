@@ -12,6 +12,7 @@ const LocalStrategy = require('passport-local')
 const User = require('./models/user.js')
 const cloudinary = require('cloudinary').v2
 const mongoStore = require('connect-mongo')
+const helmet = require('helmet')
 
 const listingRouter = require('./routers/listing.js')
 const reviewRouter = require('./routers/review.js')
@@ -25,7 +26,8 @@ cloudinary.config({
     api_secret: process.env.CLOUD_API_SECRET,
   });
 
-const atlasUrl = process.env.ATLASDB_URL
+// MongoDB connection
+const atlasUrl = process.env.ATLASDB_URL;
 
 const main = async () => {
     try {
@@ -51,6 +53,8 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.engine('ejs', ejsMate)
 app.use('/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
 
+app.use(helmet())
+
 const store = mongoStore.create({
     mongoUrl : atlasUrl,
     crypto :{
@@ -59,7 +63,7 @@ const store = mongoStore.create({
     touchAfter: 24 * 60 * 60,
 })
 
-store.on('err',(err) =>{
+store.on('error',(err) =>{
     console.log('error in MONGO SESSION STORE', err)
 })
 
@@ -72,7 +76,13 @@ const sessionOptions = {
         expires : Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge : 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     }
+}
+
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
 }
 
 app.use(session(sessionOptions))
@@ -103,16 +113,17 @@ app.use('/', userRouter)
 
 
 
-// Error handling 
+// Error handling
 app.use((err, req, res, next) => {
     let { status = 500, message = "Something went wrong" } = err
     console.log(err)
     res.status(status).render('error.ejs', { message });
 })
 
-// app.all(/.*/, (req, res, next) => {
-//     next(new ExpressError(404, "Page not found"));
-// });
+app.all(/.*/, (req, res, next) => {
+    const ExpressError = require('./utils/ExpressError.js')
+    next(new ExpressError(404, "Page not found"));
+});
 
 
 
