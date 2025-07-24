@@ -1,8 +1,3 @@
-if(process.env.NODE_ENV != 'production'){
-    require('dotenv').config()
-}
-
-
 const express = require('express')
 const app = express()
 const port = 3000
@@ -15,17 +10,34 @@ const flash = require('connect-flash')
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const User = require('./models/user.js')
+const cloudinary = require('cloudinary').v2
+const mongoStore = require('connect-mongo')
+const helmet = require('helmet')
 
 const listingRouter = require('./routers/listing.js')
 const reviewRouter = require('./routers/review.js')
 const userRouter = require('./routers/user.js')
 
+require('dotenv').config()
+
+cloudinary.config({
+    cloud_name: process.env.CLOUD_NAME,
+    api_key: process.env.CLOUD_API_KEY,
+    api_secret: process.env.CLOUD_API_SECRET,
+  });
+
+// MongoDB connection
+const atlasUrl = process.env.ATLASDB_URL;
 
 const main = async () => {
-    await mongoose.connect(process.env.ATLAS_URL)
+    try {
+        await mongoose.connect(atlasUrl)
+    } catch (error) {
+        console.error('MongoDB connection error:', error.message)
+    }
 };
 main().then(res => {
-    console.log('Connected to AtlasDB')
+    console.log('Connected to Atlas DB.')
 }).catch(err => {
     console.log(err)
 })
@@ -41,16 +53,36 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.engine('ejs', ejsMate)
 app.use('/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
 
+app.use(helmet())
+
+const store = mongoStore.create({
+    mongoUrl : atlasUrl,
+    crypto :{
+        secret : process.env.SECRET, 
+    },
+    touchAfter: 24 * 60 * 60,
+})
+
+store.on('error',(err) =>{
+    console.log('error in MONGO SESSION STORE', err)
+})
 
 const sessionOptions = {
-    secret : 'mysecretcode',
+    store,
+    secret : process.env.SECRET,
     resave : false,
     saveUninitialized : true,
     cookie:{
         expires : Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge : 7 * 24 * 60 * 60 * 1000,
         httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
     }
+}
+
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
 }
 
 app.use(session(sessionOptions))
@@ -81,16 +113,17 @@ app.use('/', userRouter)
 
 
 
-// Error handling 
+// Error handling
 app.use((err, req, res, next) => {
     let { status = 500, message = "Something went wrong" } = err
     console.log(err)
     res.status(status).render('error.ejs', { message });
 })
 
-// app.all(/.*/, (req, res, next) => {
-//     next(new ExpressError(404, "Page not found"));
-// });
+app.all(/.*/, (req, res, next) => {
+    const ExpressError = require('./utils/ExpressError.js')
+    next(new ExpressError(404, "Page not found"));
+});
 
 
 
