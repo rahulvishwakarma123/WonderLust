@@ -27,7 +27,7 @@ cloudinary.config({
   });
 
 // MongoDB connection
-const atlasUrl = process.env.ATLASDB_URL;
+const atlasUrl = 'mongodb+srv://vishwarahul638:SVmtWr7yXDGLdPM4@cluster0.3f1mgkg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 
 const main = async () => {
     try {
