@@ -51,9 +51,26 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')))
 app.engine('ejs', ejsMate)
-app.use('/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
+// Remove this line as it's causing MIME type issues
+// app.use('/bootstrap', express.static(path.join(__dirname, 'node_modules/bootstrap/dist')));
 
-app.use(helmet())
+// Configure helmet to allow external resources
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+            scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "https:", "https://res.cloudinary.com", "https://*.cloudinary.com"],
+            fontSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+            connectSrc: ["'self'"],
+            mediaSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            frameSrc: ["'self'"],
+            upgradeInsecureRequests: []
+        }
+    }
+}))
 
 const store = mongoStore.create({
     mongoUrl : atlasUrl,
@@ -120,10 +137,10 @@ app.use((err, req, res, next) => {
     res.status(status).render('error.ejs', { message });
 })
 
-app.all(/.*/, (req, res, next) => {
-    const ExpressError = require('./utils/ExpressError.js')
-    next(new ExpressError(404, "Page not found"));
-});
+// app.all(/.*/, (req, res, next) => {
+//     const ExpressError = require('./utils/ExpressError.js')
+//     next(new ExpressError(404, "Page not found"));
+// });
 
 
 

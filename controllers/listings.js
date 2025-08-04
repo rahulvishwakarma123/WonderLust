@@ -4,7 +4,6 @@ const Listing = require('../models/listing')
 // show all listing
 module.exports.allListings = async (req, res) => {
     let allLists = await Listing.find()
-    // res.send(allLists)
     res.render('listing/listings.ejs', { allLists })
 }
 
